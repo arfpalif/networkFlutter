@@ -1,5 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:modul4/view/homepage.dart';
+import 'package:modul4/model/userResponseModel.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +21,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const Homepage(),
     );
   }
 }
@@ -33,6 +36,179 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
+  Dio dio = Dio(
+    BaseOptions(
+      baseUrl: "https://6923efb13ad095fb847214b6.mockapi.io",
+      connectTimeout: const Duration(seconds: 5),
+      receiveTimeout: const Duration(seconds: 3),
+      sendTimeout: const Duration(seconds: 5),
+      headers: {
+        'Content-Type': 'application/json; charset=UTF-8',
+        "Accept": "application/json",
+        "Connection": "keep-alive",
+        "Authorization": "Bearer 123123123"
+      }
+    )
+  );
+  List<UserResponseModel> dataUser = []; 
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        print("=========on request======");
+        print(options.uri.toString()  );
+        print(options.headers.toString());
+        print("=========end on request======");
+        return handler.next(options);
+      },
+      onError: (error, handler) {
+        print("=========on error======");
+        print(error.message);
+        print("=========end on error======");
+        return handler.next(error);
+      },
+      onResponse: (response, handler) {
+        print("=========on response======");
+        print(response.statusCode);
+        print(response.data);
+        print("=========end on response======");
+        return handler.next(response);
+      },
+    ));
+  }
+
+  Future<void> getData() async {
+    try {
+      final response = await dio.get('/users',
+      options: Options(
+        headers: {
+          'Custom-Header': 'CustomHeaderValue',
+        },
+      ),
+      );
+
+      if(response.statusCode == 200 || response.statusCode == 201){
+        var data = response.data as List;
+        var dataList = data.map((e) => UserResponseModel.fromJson(e)).toList();
+
+        setState(() {
+          dataUser = dataList;
+        });
+        
+      }
+      
+    } on DioException catch(e){
+      print('Dio error: ${e.message}');
+    }
+    catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
+
+  Future <void> postData() async {
+    try {
+      final response = await dio.post(
+        '/users',
+        data: {
+          "name": "Alif",
+          "avatar": "https://images.unsplash.com/photo-1761839256791-6a93f89fb8b0?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+          "address" : "Malang"
+        },
+        options: Options(
+          headers: {
+            'Custom-Header': 'CustomHeaderValue',
+          },
+        ),
+      );
+      getData();
+      print(response.data);
+      print(response.data.length);
+      print(response.requestOptions.headers.toString());
+      print(response.realUri.host);
+    } on DioException catch(e){
+      print('Dio error: ${e.message}');
+    }
+    catch (e) {
+      print('Error posting data: $e');
+    }
+  }
+
+  Future <void> updateData() async {
+    try {
+      final response = await dio.put(
+        '/users/26',
+        data: {
+          "name": "Jaka sembung",
+          "avatar": "https://images.unsplash.com/photo-1761839256791-6a93f89fb8b0?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+          "address" : "Malang"
+        },
+        options: Options(
+          headers: {
+            'Custom-Header': 'CustomHeaderValue',
+          },
+        ),
+      );
+      print(response.data);
+      print(response.data.length);
+      print(response.requestOptions.headers.toString());
+      print(response.realUri.host);
+    } on DioException catch(e){
+      print('Dio error: ${e.message}');
+    }
+    catch (e) {
+      print('Error posting data: $e');
+    }
+  }
+
+  Future <void> deleteData() async {
+    try {
+      final response = await dio.delete(
+        '/users/26',
+        options: Options(
+          headers: {
+            'Custom-Header': 'CustomHeaderValue',
+          },
+        ),
+      );
+      print(response.data);
+      print(response.data.length);
+      print(response.requestOptions.headers.toString());
+      print(response.realUri.host);
+    } on DioException catch(e){
+      print('Dio error: ${e.message}');
+    }
+    catch (e) {
+      print('Error posting data: $e');
+    }
+  }
+
+  Future <void> updateDataPatch() async {
+    try {
+      final response = await dio.patch(
+        '/users/26',
+        data: {
+          "name": "Jaka was"
+        },
+        options: Options(
+          headers: {
+            'Custom-Header': 'CustomHeaderValue',
+          },
+        ),
+      );
+      print(response.data);
+      print(response.requestOptions.headers.toString());
+      print(response.realUri.host);
+    } on DioException catch(e){
+      print('Dio error: ${e.message}');
+    }
+    catch (e) {
+      print('Error posting data: $e');
+    }
+  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +225,19 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
+                Expanded(child: ListView.builder(
+                  itemCount: dataUser.length,
+                  itemBuilder: (context, index){
+                    UserResponseModel user = dataUser[index];
+                      return ListTile(
+                        title: Text(user.name?? "no name"),
+                        leading: Image.network(user.avatar ?? ""),
+                        subtitle: Text(user.address ?? "No address"),
+                      );
+                  }
+                )
+                ),
+                
                 const Text('You have pushed the button this many times:'),
                 Obx(
                   () => Text( 
@@ -56,10 +245,29 @@ class _MyHomePageState extends State<MyHomePage> {
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 ),
+                
                 ElevatedButton(
-                  onPressed: () => Get.to(SecondPage()), 
+                  onPressed: (){
+                    Get.to(Homepage());
+                  }, 
                   child: Text('Go to Second Page')
                 ),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: updateData, 
+                  child: Text('Update data')
+                ),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: updateDataPatch, 
+                  child: Text('Update data')
+                ),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: deleteData, 
+                  child: Text('Delete data')
+                ),
+                SizedBox(height: 10),
                 Text(
                   ThirdController.label,
                   style: Theme.of(context).textTheme.headlineMedium,
@@ -90,8 +298,6 @@ class mainController extends GetxController {
   void increment2() {
     counter2++;
   }
-
-  
 }
 
 class SecondPage extends StatelessWidget {
@@ -109,7 +315,8 @@ class SecondPage extends StatelessWidget {
           ),
           body: Center(
             child: Column(
-              children: [
+              children: <Widget>[
+
                 Obx( 
                   () => Text(
                     controller.labelrx.value,
@@ -138,12 +345,12 @@ class secondController extends GetxController {
   var label = "Ini Second Page";
   var labelrx = "Ini Second Page".obs;
 
-  updateLabel(String newLabel) {
+  void updateLabel(String newLabel) {
     label = newLabel;
     update();
   }
 
-  updateLabelRx(String newLabel) {
+  void updateLabelRx(String newLabel) {
     labelrx.value = newLabel;
   }
   @override
